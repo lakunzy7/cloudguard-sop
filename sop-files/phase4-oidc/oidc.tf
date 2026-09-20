@@ -93,6 +93,14 @@ data "aws_iam_policy_document" "github_actions_assume" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
+      # ⚠️ CHANGE THIS: your own fork's owner and repository IDs.
+      #
+      # The two numbers are GitHub's immutable IDs, not names, and they
+      # cannot be guessed — two API calls in the README read them for
+      # you. Do not write this from GitHub's documentation: the
+      # documented form of this claim, repo:OWNER/REPO:ref:..., never
+      # matches, and the failure is a generic "not authorized" that
+      # names no claim at all.
       values   = ["repo:lakunzy7@47754154/cloudguard@1378228425:ref:refs/heads/main"]
     }
   }

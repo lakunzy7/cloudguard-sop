@@ -1,0 +1,137 @@
+name: Terraform Deploy
+
+# Two triggers, deliberately different in what they are allowed to do.
+#
+#   push to main  ->  plan only. Every commit gets the environment
+#                     checked against real state, and nothing is changed.
+#
+#   manual run    ->  plan, and apply if you ask for it. Deploying stays
+#                     a deliberate act rather than a side effect of
+#                     pushing.
+#
+# That split is not ceremony. A workflow that applies on every push
+# means a typo in a commit message is enough to change production
+# infrastructure, and the person who wrote it has already moved on.
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Apply the plan? Leave unchecked to plan only."
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+
+# id-token: write is what makes OIDC work. It lets this job request a
+# short-lived token from GitHub's identity provider, which AWS then
+# exchanges for temporary credentials.
+#
+# Without it the job has no way to prove who it is, and the AWS step
+# fails with a message about being unable to get an ID token. It is the
+# single line most often missing from a broken OIDC setup.
+permissions:
+  id-token: write
+  contents: read
+
+# Remote state has a lock table, but the lock only protects against
+# concurrent applies — it does not queue them. This does: two runs of
+# this workflow can never overlap, and a run arriving while another is in
+# progress waits its turn rather than failing.
+concurrency:
+  group: terraform-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      # The sub claim this role's trust policy matches on is NOT the form
+      # the documentation shows. GitHub sends the owner and repository
+      # names with their immutable numeric IDs appended:
+      #
+      #   repo:lakunzy7@47754154/cloudguard@1378228425:ref:refs/heads/main
+      #
+      # That format was established in this project's first run by
+      # decoding the token this job mints, after an earlier assume failed
+      # with a generic "not authorized" that named no claim. See section
+      # 4.4 of the walkthrough.
+      #
+      # This run works from a FORK, which is a different repository with a
+      # different ID, so the upstream's value would not match here. If
+      # this repository is ever transferred or recreated, the IDs change
+      # and both this comment and the trust policy have to change with
+      # them.
+
+      # No AWS_ACCESS_KEY_ID, no AWS_SECRET_ACCESS_KEY, no repository
+      # secret of any kind. The action asks GitHub for an OIDC token,
+      # hands it to AWS STS, and receives credentials that expire within
+      # the hour. That exchange is the whole of deliverable 6.
+      - name: Assume the deploy role via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # ⚠️ CHANGE THIS: your own account ID in the role ARN. See
+          # "What you must change" in this repository's README.
+          role-to-assume: arn:aws:iam::113410693155:role/cloudguard-github-actions-deploy
+          aws-region: us-east-1
+
+      # Evidence rather than debugging, and a test rather than a claim.
+      #
+      # Note what this deliberately does NOT check. An earlier version
+      # failed the build if AWS_ACCESS_KEY_ID was set, on the theory that
+      # a static key would show up there. That check was wrong: this
+      # action exports AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and
+      # AWS_SESSION_TOKEN itself, populated with the temporary
+      # credentials it just got from STS. The variable is always set, so
+      # the check fired on success. Presence of a key ID proves nothing.
+      #
+      # What distinguishes temporary credentials from a long-lived key is
+      # AWS_SESSION_TOKEN. STS sessions always carry one; IAM user access
+      # keys never do. So the check below tests provenance, not presence.
+      - name: Prove which identity is running
+        run: |
+          echo "Who am I?"
+          aws sts get-caller-identity
+
+          echo ""
+          echo "Credential provenance"
+
+          ARN=$(aws sts get-caller-identity --query Arn --output text)
+
+          case "$ARN" in
+            arn:aws:sts::*:assumed-role/*)
+              echo "OK   assumed-role session: $ARN"
+              ;;
+            *)
+              echo "FAIL not an assumed-role session: $ARN"
+              exit 1
+              ;;
+          esac
+
+          if [ -n "$AWS_SESSION_TOKEN" ]; then
+            echo "OK   session token present, so these credentials expire"
+          else
+            echo "FAIL no session token - these are long-lived credentials"
+            exit 1
+          fi
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
+
+      # This reads state from S3, which is why 4.1 had to move the state
+      # there first. A runner starts with nothing on disk.
+      - name: Terraform init
+        run: terraform -chdir=terraform init
+
+      - name: Terraform plan
+        run: terraform -chdir=terraform plan -no-color -lock-timeout=5m
+
+      - name: Terraform apply
+        if: ${{ inputs.apply }}
+        run: terraform -chdir=terraform apply -auto-approve -lock-timeout=5m

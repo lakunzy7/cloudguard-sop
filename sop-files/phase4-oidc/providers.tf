@@ -36,6 +36,8 @@ terraform {
   # Naming it cloudguard/terraform.tfstate leaves room for a second
   # environment in the same bucket without the two colliding.
   backend "s3" {
+    # ⚠️ CHANGE THIS: name the bucket with YOUR OWN account ID. See
+    # "What you must change" in this repository's README.
     bucket         = "cloudguard-tfstate-113410693155"
     key            = "cloudguard/terraform.tfstate"
     region         = "us-east-1"

@@ -35,6 +35,69 @@ typed by hand.
 | `sop-files/phase4-oidc/providers.tf` | 4.1.2 | The same provider configuration with an S3 remote backend added, so a GitHub Actions runner can read the state a CI deploy needs. |
 | `sop-files/phase4-oidc/oidc.tf` | 4.2 | The GitHub OIDC provider, the deploy role, and the trust policy that stops every other repository on GitHub assuming it. |
 
+## ⚠️ What you must change before these will work for you
+
+**Three values in these files are specific to the author's account and
+repository. They will not work in yours.** Each is marked in the file
+with a `CHANGE THIS` comment.
+
+| File | The value | What it must become |
+|---|---|---|
+| `phase4-oidc/providers.tf` | `cloudguard-tfstate-113410693155` | Your own state bucket name |
+| `phase4-oidc/oidc.tf` | the `sub` condition value | Your fork's owner and repository IDs |
+| `phase4-oidc/terraform-deploy.yml` | `arn:aws:iam::113410693155:role/...` | Your account's role ARN |
+
+Everything else in these files is account-independent. Bucket names
+everywhere else in the environment are built with
+`${data.aws_caller_identity.current.account_id}`, so Terraform derives
+them from whichever account it runs in and they need no editing.
+
+### Finding your AWS account ID
+
+```bash
+aws sts get-caller-identity --query Account --output text
+```
+
+Use it to build both the state bucket name, `cloudguard-tfstate-<account-id>`,
+and the role ARN, `arn:aws:iam::<account-id>:role/cloudguard-github-actions-deploy`.
+
+### Finding your fork's owner and repository IDs
+
+The `sub` condition needs two **immutable numeric** identifiers, not the
+names. Get them from the GitHub API:
+
+```bash
+gh api users/<your-username> --jq '.id'
+```
+
+```bash
+gh api repos/<your-username>/cloudguard --jq '.id'
+```
+
+Then assemble the string:
+
+```
+repo:<username>@<ownerID>/cloudguard@<repoID>:ref:refs/heads/main
+```
+
+For the author's fork that is `lakunzy7@47754154` and `1378228425`,
+which is where the value in `oidc.tf` comes from.
+
+**Why the numbers rather than just the names.** Names are mutable — a
+repository can be renamed, and a deleted name can be re-registered by
+somebody else. A condition matching on names alone would then trust
+whatever repository next held that name, including one an attacker
+created. The numeric IDs cannot change, so the condition matches one
+specific repository for as long as it exists.
+
+**And a warning worth believing.** GitHub's own documentation shows this
+claim in the form `repo:OWNER/REPO:ref:...`, **which never matches**. The
+real value appends the numeric IDs as shown above. This was established
+by decoding the token the workflow actually mints, after a condition
+written from the documentation failed with a generic "not authorized"
+that named no claim at all. If you write it from the docs, it will not
+work.
+
 ## Two things worth understanding before copying
 
 **These are the files at the end of their phase, not the end of the

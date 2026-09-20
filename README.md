@@ -44,7 +44,7 @@ with a `CHANGE THIS` comment.
 | File | The value | What it must become |
 |---|---|---|
 | `phase4-oidc/providers.tf` | `cloudguard-tfstate-113410693155` | Your own state bucket name |
-| `phase4-oidc/oidc.tf` | the `sub` condition value | Your fork's owner and repository IDs |
+| `phase4-oidc/oidc.tf` | the `sub` condition value | The IDs of the repository you will run the workflow in |
 | `phase4-oidc/terraform-deploy.yml` | `arn:aws:iam::113410693155:role/...` | Your account's role ARN |
 
 Everything else in these files is account-independent. Bucket names
@@ -61,10 +61,27 @@ aws sts get-caller-identity --query Account --output text
 Use it to build both the state bucket name, `cloudguard-tfstate-<account-id>`,
 and the role ARN, `arn:aws:iam::<account-id>:role/cloudguard-github-actions-deploy`.
 
-### Finding your fork's owner and repository IDs
+### Finding the repository's owner and repository IDs
 
-The `sub` condition needs two **immutable numeric** identifiers, not the
-names. Get them from the GitHub API:
+**First, decide which repository you will run the workflow in.** This is
+the one step in the walkthrough that needs a repository of your own.
+Phases 1 to 3 work from a plain clone of the upstream environment, but a
+GitHub Actions workflow has to live somewhere, and the OIDC token is
+bound to the repository that mints it — so from section 4.3 onward you
+need somewhere to push.
+
+Either of these gives you one:
+
+```bash
+gh repo fork expadox/cloudguard --clone=false
+```
+
+```bash
+gh repo create <your-username>/cloudguard --public --source=. --push
+```
+
+The `sub` condition needs two **immutable numeric** identifiers for that
+repository, not the names. Get them from the GitHub API:
 
 ```bash
 gh api users/<your-username> --jq '.id'
@@ -80,8 +97,9 @@ Then assemble the string:
 repo:<username>@<ownerID>/cloudguard@<repoID>:ref:refs/heads/main
 ```
 
-For the author's fork that is `lakunzy7@47754154` and `1378228425`,
-which is where the value in `oidc.tf` comes from.
+For the author's repository that is `lakunzy7@47754154` and
+`1378228425`, which is where the value in `oidc.tf` comes from. Yours
+will be different numbers, because it is a different repository.
 
 **Why the numbers rather than just the names.** Names are mutable — a
 repository can be renamed, and a deleted name can be re-registered by

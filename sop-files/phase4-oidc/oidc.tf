@@ -93,7 +93,8 @@ data "aws_iam_policy_document" "github_actions_assume" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      # ⚠️ CHANGE THIS: your own fork's owner and repository IDs.
+      # ⚠️ CHANGE THIS: the owner and repository IDs of the repository
+      # you will run the workflow in.
       #
       # The two numbers are GitHub's immutable IDs, not names, and they
       # cannot be guessed — two API calls in the README read them for

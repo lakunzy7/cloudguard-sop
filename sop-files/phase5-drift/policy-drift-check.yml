@@ -1,0 +1,95 @@
+name: Policy Drift Check
+
+# Chain A, Project 1, deliverable 9.
+#
+# Re-runs the CloudTrail usage analysis on a schedule and fails if the
+# process_upload role's policy and its actual usage have diverged. A
+# policy right-sized from a week of evidence is not guaranteed to stay
+# right-sized: the function's code can start calling something new, and
+# the policy can be widened to match it without anyone revisiting
+# whether that widening was justified.
+#
+# TWO TRIGGERS, and the first is the one the deliverable is about.
+#
+#   schedule  ->  a real, defined cadence. Every run is timestamped in
+#                 the Actions history, which is what makes "it runs
+#                 weekly" a fact rather than a claim.
+#
+#   dispatch  ->  a manual re-run, for when a check fails and you want
+#                 to look again after investigating.
+#
+# A CAVEAT WORTH KNOWING, so it is not discovered the hard way: GitHub
+# disables scheduled workflows on a repository with no activity for 60
+# days. They can be re-enabled from the Actions tab, and any push
+# restarts the clock. This is GitHub's behaviour, not a bug here, and it
+# is exactly why the schedule must be visible in the file rather than
+# living in someone's memory.
+on:
+  schedule:
+    # 06:17 UTC on Mondays. Weekly rather than daily, and the minute is
+    # deliberately not :00 — every cron on every repository asks for the
+    # top of the hour, so an off-minute gets scheduled sooner.
+    #
+    # Weekly is a considered choice, not a default. Drift here means
+    # somebody added a permission; it is a review problem rather than an
+    # incident, and a check that fires daily on an environment this
+    # quiet would mostly report "no traffic to examine".
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: policy-drift-check
+  cancel-in-progress: false
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      # The same OIDC role the deploy workflow uses. Federation built in
+      # Phase 4 is what lets this run on a schedule with no stored
+      # credential to rotate — which is the difference between a check
+      # you can leave running for a year and one you have to keep alive
+      # by hand.
+      - name: Assume the deploy role via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # ⚠️ CHANGE THIS: your own account ID. See "What you must change"
+          # in this repository's README.
+          role-to-assume: arn:aws:iam::113410693155:role/cloudguard-github-actions-deploy
+          aws-region: us-east-1
+
+      - name: Check for permission drift
+        run: |
+          code=0
+          bash scripts/check-policy-drift.sh > /tmp/drift.txt 2>&1 || code=$?
+          cat /tmp/drift.txt
+
+          # The job summary is what makes a failure readable without
+          # opening the log. GitHub renders it on the run page, and it
+          # survives as part of the run's record.
+          {
+            echo "## Policy drift check"
+            echo ""
+            echo '```'
+            cat /tmp/drift.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          #   0 - policy and usage agree
+          #   2 - drift detected
+          #   3 - not enough traffic to decide
+          #
+          # All three are surfaced as the job's exit code, and 2 and 3
+          # both fail the run. That is deliberate: "I could not tell" is
+          # not a pass, and a check that reports green when it had
+          # nothing to measure is worse than no check at all.
+          exit $code

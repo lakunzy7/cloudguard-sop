@@ -34,6 +34,8 @@ typed by hand.
 | `sop-files/phase3-rightsizing/iam.tf` | 3.2 | The right-sized policy replacing `AmazonS3FullAccess`. Two statements: `s3:GetObject` on the bucket, `s3:PutObject` on `metadata/*`. |
 | `sop-files/phase4-oidc/providers.tf` | 4.1.2 | The same provider configuration with an S3 remote backend added, so a GitHub Actions runner can read the state a CI deploy needs. |
 | `sop-files/phase4-oidc/oidc.tf` | 4.2 | The GitHub OIDC provider, the deploy role, and the trust policy that stops every other repository on GitHub assuming it. |
+| `sop-files/phase5-drift/check-policy-drift.sh` | 5.3 | The drift check itself. Resolves the live policy, reads real CloudTrail usage for a lookback window, and compares the two in both directions. |
+| `sop-files/phase5-drift/policy-drift-check.yml` | 5.3 | The schedule. `cron: '17 6 * * 1'` — Mondays at 06:17 UTC — running the script through the same OIDC role Phase 4 created. |
 
 ## ⚠️ What you must change before these will work for you
 
@@ -46,6 +48,8 @@ with a `CHANGE THIS` comment.
 | `phase4-oidc/providers.tf` | `cloudguard-tfstate-113410693155` | Your own state bucket name |
 | `phase4-oidc/oidc.tf` | the `sub` condition value | The IDs of the repository you will run the workflow in |
 | `phase4-oidc/terraform-deploy.yml` | `arn:aws:iam::113410693155:role/...` | Your account's role ARN |
+| `phase5-drift/check-policy-drift.sh` | the `POLICY_ARN` and `TRAIL_BUCKET` defaults | Your account ID in both |
+| `phase5-drift/policy-drift-check.yml` | `arn:aws:iam::113410693155:role/...` | Your account's role ARN |
 
 Everything else in these files is account-independent. Bucket names
 everywhere else in the environment are built with

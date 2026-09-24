@@ -37,10 +37,31 @@ typed by hand.
 | `sop-files/phase5-drift/check-policy-drift.sh` | 5.3 | The drift check itself. Resolves the live policy, reads real CloudTrail usage for a lookback window, and compares the two in both directions. |
 | `sop-files/phase5-drift/policy-drift-check.yml` | 5.3 | The schedule. `cron: '17 6 * * 1'` — Mondays at 06:17 UTC — running the script through the same OIDC role Phase 4 created. |
 
+## Project 2 — Just-in-Time Access and Confused Deputy Hardening
+
+Project 2 continues in the same environment as Project 1, so the same
+clone works. If you already have it, pull before starting section 2.4:
+
+```bash
+cd cloudguard-sop
+git pull
+```
+
+| File | Walkthrough section | What it is |
+|---|---|---|
+| `sop-files/project2/phase2-jit-access-flow/jit.tf` | 2.4 | The JIT role, the broker's role and its two permissions, the broker function, the resource policy that acts as the allowlist, and the SSM parameter the credential is published to. |
+| `sop-files/project2/phase2-jit-access-flow/handler.py` | 2.4 | The broker itself. Requires a justification, assumes the JIT role for 900 seconds, writes the credential to SSM in credentials-file form, and returns a summary containing no credential at all. |
+
+**One change Project 2 needs in a file you already have is not staged
+here.** It is a single variable added to `terraform/variables.tf`, and
+section 2.4 shows it inline — four lines, and the change is the lesson.
+The same reasoning Project 1 applies below: a copy command hides what
+changed.
+
 ## ⚠️ What you must change before these will work for you
 
-**Three values in these files are specific to the author's account and
-repository. They will not work in yours.** Each is marked in the file
+**A handful of values in these files are specific to the author's account
+and repository. They will not work in yours.** Each is marked in the file
 with a `CHANGE THIS` comment.
 
 | File | The value | What it must become |
@@ -50,6 +71,13 @@ with a `CHANGE THIS` comment.
 | `phase4-oidc/terraform-deploy.yml` | `arn:aws:iam::113410693155:role/...` | Your account's role ARN |
 | `phase5-drift/check-policy-drift.sh` | the `POLICY_ARN` and `TRAIL_BUCKET` defaults | Your account ID in both |
 | `phase5-drift/policy-drift-check.yml` | `arn:aws:iam::113410693155:role/...` | Your account's role ARN |
+| `terraform/variables.tf` (Project 2) | the `jit_requester_principal` default | Your own operator identity, as an ARN — the one principal allowed to request just-in-time access |
+
+**Project 2's two staged files need no editing at all.** Everything
+account-specific in them is either built from
+`${data.aws_caller_identity.current.account_id}` or derives from
+`var.environment_name`, so they work unchanged in any account. The only
+value you touch is the variable above.
 
 Everything else in these files is account-independent. Bucket names
 everywhere else in the environment are built with

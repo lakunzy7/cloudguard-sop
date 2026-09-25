@@ -57,11 +57,16 @@ git pull
 | `sop-files/project2/phase5-cross-account-trust/vendor-trust.tf` | 5.3 | The cross-account scenario: the role the vendor assumes, whose trust policy names a real second AWS account and carries no condition, and the deputy that stands in for the vendor's service. |
 | `sop-files/project2/phase5-cross-account-trust/variables.tf` | 5.3 | The variables file again, one phase on. It now carries `vendor_account_id` alongside the allowlist principal. |
 
-**`variables.tf` appears twice, and that is deliberate.** Each copy is
-the file at the end of *its* phase, so section 2.4 gets one with a single
-addition and 5.3 gets one with two. Copying the later file early would
-work — an unused variable costs nothing — but it would put a variable in
-front of you that the phase you are in has not explained yet.
+| `sop-files/project2/phase6-externalid-and-standard/vendor-trust.tf` | 6.1 | The same scenario role, now carrying the `sts:ExternalId` condition that closes the gap Phase 5 demonstrated. Diff it against the Phase 5 copy and the change is one block. |
+| `sop-files/project2/phase6-externalid-and-standard/variables.tf` | 6.1 | The variables file one phase on again, now with `vendor_external_id`. |
+| `sop-files/project2/phase6-externalid-and-standard/TRUST-POLICY-STANDARD.md` | 6.6 | The standard itself — four checkable requirements for every trust policy in this environment, each one derived from something this project demonstrated. |
+
+**`variables.tf` appears three times, and that is deliberate.** Each copy
+is the file at the end of *its* phase, so section 2.4 gets one with a
+single addition, 5.3 gets one with two, and 6.1 gets one with three.
+Copying a later file early would work — an unused variable costs nothing
+— but it would put a variable in front of you that the phase you are in
+has not explained yet.
 
 **These are files whole, for changes that are small.** That is a
 deliberate departure from the rule Project 1 follows below, where small

@@ -51,12 +51,18 @@ git pull
 |---|---|---|
 | `sop-files/project2/phase2-jit-access-flow/jit.tf` | 2.4 | The JIT role, the broker's role and its two permissions, the broker function, the resource policy that acts as the allowlist, and the SSM parameter the credential is published to. |
 | `sop-files/project2/phase2-jit-access-flow/handler.py` | 2.4 | The broker itself. Requires a justification, assumes the JIT role for 900 seconds, writes the credential to SSM in credentials-file form, and returns a summary containing no credential at all. |
+| `sop-files/project2/phase2-jit-access-flow/variables.tf` | 2.4 | The environment's variables file with one addition: `jit_requester_principal`, which is the allowlist. Section 2.4 also shows those four lines inline, so you can see what changed — this is here for anyone who would rather copy the result than retype it. |
+| `sop-files/project2/phase4-standing-access-removed/iam.tf` | 4.2 | The role file **after** the standing developer role was deleted, with the closure record in its place. Staged because a deletion is the one change a description cannot convey exactly — there is no new text to read, only text that is gone. |
+| `sop-files/project2/phase4-standing-access-removed/outputs.tf` | 4.2 | The outputs file with `standing_developer_role_arn` removed. It referenced the deleted role, and an output pointing at a resource that no longer exists fails the next plan rather than reporting anything useful. |
 
-**One change Project 2 needs in a file you already have is not staged
-here.** It is a single variable added to `terraform/variables.tf`, and
-section 2.4 shows it inline — four lines, and the change is the lesson.
-The same reasoning Project 1 applies below: a copy command hides what
-changed.
+**These are files whole, for changes that are small.** That is a
+deliberate departure from the rule Project 1 follows below, where small
+edits are shown inline and not staged. Both routes are given for
+Project 2: the walkthrough prints the change so you can see *what*
+changed, and the file is here so you can copy the result instead of
+retyping it. A deletion has nothing to print, which is why Phase 4's two
+files are staged with no inline equivalent beyond the description of what
+went.
 
 ## ⚠️ What you must change before these will work for you
 
@@ -73,11 +79,13 @@ with a `CHANGE THIS` comment.
 | `phase5-drift/policy-drift-check.yml` | `arn:aws:iam::113410693155:role/...` | Your account's role ARN |
 | `terraform/variables.tf` (Project 2) | the `jit_requester_principal` default | Your own operator identity, as an ARN — the one principal allowed to request just-in-time access |
 
-**Project 2's two staged files need no editing at all.** Everything
-account-specific in them is either built from
-`${data.aws_caller_identity.current.account_id}` or derives from
-`var.environment_name`, so they work unchanged in any account. The only
-value you touch is the variable above.
+**None of Project 2's five staged files needs editing to work.** Every
+account-specific value in them is either built from
+`${data.aws_caller_identity.current.account_id}` or derived from
+`var.environment_name`, so they deploy unchanged into any account. The
+one value you do set — the allowlist principal — is named in the table
+above, and it is a value only you can supply rather than something that
+has to be corrected.
 
 Everything else in these files is account-independent. Bucket names
 everywhere else in the environment are built with

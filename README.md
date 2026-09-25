@@ -1,8 +1,11 @@
 # CloudGuard — SOP files
 
-Source files for the CloudGuard walkthrough (Chain A, Project 1).
+Source files for the CloudGuard walkthroughs (Chain A, Projects 1 and 2).
 
-The walkthrough teaches least-privilege IAM and workload identity
+One directory per project, and inside each, one directory per phase —
+mirroring the walkthroughs, which are read a phase at a time.
+
+The walkthroughs teach least-privilege IAM and workload identity
 federation by having you build the changes yourself, step by step. Some
 of those steps produce a file too large to print in the guide without
 burying the lesson — this repository holds those files, so each step can
@@ -20,22 +23,22 @@ Then, whenever the walkthrough reaches a step that says a file is
 provided here, copy it into place. For example, section 4.2:
 
 ```bash
-cp cloudguard-sop/sop-files/phase4-oidc/oidc.tf terraform/oidc.tf
+cp cloudguard-sop/sop-files/project1/phase4-oidc/oidc.tf terraform/oidc.tf
 ```
 
 The walkthrough always names the exact command. Nothing here needs to be
 typed by hand.
 
-## What is here, and when it is used
+## Project 1 — Automated Least-Privilege and Workload Identity Federation
 
 | File | Walkthrough section | What it is |
 |---|---|---|
-| `sop-files/phase2-cloudtrail/cloudtrail.tf` | 2.3 | The trail with an S3 data-event selector added. Data events are off by default on every trail; without this, CloudTrail cannot see a single `GetObject` or `PutObject`, and the analysis the project depends on has nothing to read. |
-| `sop-files/phase3-rightsizing/iam.tf` | 3.2 | The right-sized policy replacing `AmazonS3FullAccess`. Two statements: `s3:GetObject` on the bucket, `s3:PutObject` on `metadata/*`. |
-| `sop-files/phase4-oidc/providers.tf` | 4.1.2 | The same provider configuration with an S3 remote backend added, so a GitHub Actions runner can read the state a CI deploy needs. |
-| `sop-files/phase4-oidc/oidc.tf` | 4.2 | The GitHub OIDC provider, the deploy role, and the trust policy that stops every other repository on GitHub assuming it. |
-| `sop-files/phase5-drift/check-policy-drift.sh` | 5.3 | The drift check itself. Resolves the live policy, reads real CloudTrail usage for a lookback window, and compares the two in both directions. |
-| `sop-files/phase5-drift/policy-drift-check.yml` | 5.3 | The schedule. `cron: '17 6 * * 1'` — Mondays at 06:17 UTC — running the script through the same OIDC role Phase 4 created. |
+| `sop-files/project1/phase2-cloudtrail/cloudtrail.tf` | 2.3 | The trail with an S3 data-event selector added. Data events are off by default on every trail; without this, CloudTrail cannot see a single `GetObject` or `PutObject`, and the analysis the project depends on has nothing to read. |
+| `sop-files/project1/phase3-rightsizing/iam.tf` | 3.2 | The right-sized policy replacing `AmazonS3FullAccess`. Two statements: `s3:GetObject` on the bucket, `s3:PutObject` on `metadata/*`. |
+| `sop-files/project1/phase4-oidc/providers.tf` | 4.1.2 | The same provider configuration with an S3 remote backend added, so a GitHub Actions runner can read the state a CI deploy needs. |
+| `sop-files/project1/phase4-oidc/oidc.tf` | 4.2 | The GitHub OIDC provider, the deploy role, and the trust policy that stops every other repository on GitHub assuming it. |
+| `sop-files/project1/phase5-drift/check-policy-drift.sh` | 5.3 | The drift check itself. Resolves the live policy, reads real CloudTrail usage for a lookback window, and compares the two in both directions. |
+| `sop-files/project1/phase5-drift/policy-drift-check.yml` | 5.3 | The schedule. `cron: '17 6 * * 1'` — Mondays at 06:17 UTC — running the script through the same OIDC role Phase 4 created. |
 
 ## Project 2 — Just-in-Time Access and Confused Deputy Hardening
 

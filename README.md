@@ -54,6 +54,14 @@ git pull
 | `sop-files/project2/phase2-jit-access-flow/variables.tf` | 2.4 | The environment's variables file with one addition: `jit_requester_principal`, which is the allowlist. Section 2.4 also shows those four lines inline, so you can see what changed — this is here for anyone who would rather copy the result than retype it. |
 | `sop-files/project2/phase4-standing-access-removed/iam.tf` | 4.2 | The role file **after** the standing developer role was deleted, with the closure record in its place. Staged because a deletion is the one change a description cannot convey exactly — there is no new text to read, only text that is gone. |
 | `sop-files/project2/phase4-standing-access-removed/outputs.tf` | 4.2 | The outputs file with `standing_developer_role_arn` removed. It referenced the deleted role, and an output pointing at a resource that no longer exists fails the next plan rather than reporting anything useful. |
+| `sop-files/project2/phase5-cross-account-trust/vendor-trust.tf` | 5.3 | The cross-account scenario: the role the vendor assumes, whose trust policy names a real second AWS account and carries no condition, and the deputy that stands in for the vendor's service. |
+| `sop-files/project2/phase5-cross-account-trust/variables.tf` | 5.3 | The variables file again, one phase on. It now carries `vendor_account_id` alongside the allowlist principal. |
+
+**`variables.tf` appears twice, and that is deliberate.** Each copy is
+the file at the end of *its* phase, so section 2.4 gets one with a single
+addition and 5.3 gets one with two. Copying the later file early would
+work — an unused variable costs nothing — but it would put a variable in
+front of you that the phase you are in has not explained yet.
 
 **These are files whole, for changes that are small.** That is a
 deliberate departure from the rule Project 1 follows below, where small

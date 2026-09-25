@@ -60,6 +60,7 @@ git pull
 | `sop-files/project2/phase6-externalid-and-standard/vendor-trust.tf` | 6.1 | The same scenario role, now carrying the `sts:ExternalId` condition that closes the gap Phase 5 demonstrated. Diff it against the Phase 5 copy and the change is one block. |
 | `sop-files/project2/phase6-externalid-and-standard/variables.tf` | 6.1 | The variables file one phase on again, now with `vendor_external_id`. |
 | `sop-files/project2/phase6-externalid-and-standard/TRUST-POLICY-STANDARD.md` | 6.6 | The standard itself — four checkable requirements for every trust policy in this environment, each one derived from something this project demonstrated. |
+| `sop-files/project2/phase7-role-audit-and-handoff/vendor-trust.tf` | 7.4 | The scenario role one last time, after the audit. The deputy is gone and the trust names only the real vendor account — which is the shape deliverable 5 described before a model was added to make it testable. |
 
 **`variables.tf` appears three times, and that is deliberate.** Each copy
 is the file at the end of *its* phase, so section 2.4 gets one with a

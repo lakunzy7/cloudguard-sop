@@ -93,7 +93,7 @@ with a `CHANGE THIS` comment.
 | `phase5-drift/policy-drift-check.yml` | `arn:aws:iam::113410693155:role/...` | Your account's role ARN |
 | `terraform/variables.tf` (Project 2) | the `jit_requester_principal` default | Your own operator identity, as an ARN — the one principal allowed to request just-in-time access |
 
-**None of Project 2's five staged files needs editing to work.** Every
+**None of Project 2's staged files needs editing to work.** Every
 account-specific value in them is either built from
 `${data.aws_caller_identity.current.account_id}` or derived from
 `var.environment_name`, so they deploy unchanged into any account. The

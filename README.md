@@ -87,6 +87,8 @@ went.
 |---|---|---|
 | `sop-files/project3/phase3-chaos-framework/IAM-CHAOS-FRAMEWORK.md` | 3.2 | The chaos framework: five rules, seven steps, the four ways a test lies to you, and the method applied to the tests Projects 1 to 3 actually ran. |
 | `sop-files/project3/phase5-automated-revocation/iam-chaos-test.sh` | 5.2 | The automated test. Records the state, removes one named policy statement, retries the dependent call until it is refused, checks the refusal names what was removed, restores, and verifies the restore — restoring on any exit, including a signal. |
+| `sop-files/project3/phase6-risk-scoring/ENTITLEMENT-RISK-SCORING.md` | 6.2 | The method and the full ranking. Four dimensions scored 1–5 and multiplied rather than added, every score traceable to something readable in the account, and a closing section showing a reader how to produce their own table from their own environment. |
+| `sop-files/project3/phase7-seeded-escalation-path/seeded-escalation.tf` | 7.1 | The seeded escalation path: a trust-maintenance role that reads role configuration and carries one write — `iam:UpdateAssumeRolePolicy` on the CI role, which holds `iam:*` on everything. Apply it, rebuild the graph, and the privesc query names it. Section 7.3 removes that one statement and nothing else. |
 
 ### ⚠️ What is deliberately *not* staged here, and why
 

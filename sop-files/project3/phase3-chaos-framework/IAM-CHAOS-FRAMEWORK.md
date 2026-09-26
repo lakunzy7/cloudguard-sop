@@ -99,7 +99,7 @@ Any one of these is a reason not to run the test until it is resolved.
 
 ---
 
-## The three ways a test lies to you
+## The four ways a test lies to you
 
 These are the failure modes this portfolio has actually hit. Each one produced a
 result that looked like an answer and was not.
@@ -140,6 +140,32 @@ both look repaired and are not.
 
 **The general form:** restoring is a change, and changes get tested. Run the
 test again and watch it pass before declaring the environment whole.
+
+### 4. The change that had not taken effect yet
+
+During Project 3's own chaos test, `sts:AssumeRole` was removed from the JIT
+broker's policy so that the access flow would break. Terraform applied it and
+reported success. The next invocation granted the request anyway — the broker
+issued a credential — and for a moment that looked like evidence that the
+control was not load-bearing at all.
+
+It was not. **IAM policy changes are eventually consistent.** The removal was
+correct and in place as far as the API was concerned; it had simply not reached
+the enforcement path when the test ran. The grant was real, and it proved
+nothing either way.
+
+**The general form:** a successful apply is not a change in force. Some
+resources take effect the moment the call returns; some do not, and the ones
+that matter here are usually in the second group. Before observing, confirm the
+change has landed by **attempting the thing it is meant to prevent** — not by
+re-reading the resource. A read-back reports the API's view, which was always
+correct, and says nothing about what a call will actually be allowed to do.
+
+Where a delay is expected, measure it rather than guessing: retry the attempt at
+a fixed interval and record how many seconds pass before it changes. That number
+is worth writing down, because it sets the budget for every later test of the
+same kind — the same way the delivery latency measured in Project 1's Phase 2
+sets the budget for reading CloudTrail.
 
 ---
 

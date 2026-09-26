@@ -73,11 +73,34 @@ restore_policy() {
   [ -n "$BROKEN" ] || return 0
   aws iam set-default-policy-version --policy-arn "$POLICY_ARN" \
     --version-id "$ORIGINAL" > /dev/null 2>&1 || true
-  aws iam delete-policy-version --policy-arn "$POLICY_ARN" \
-    --version-id "$BROKEN" > /dev/null 2>&1 || true
+  for _ in 1 2 3; do
+    aws iam delete-policy-version --policy-arn "$POLICY_ARN" \
+      --version-id "$BROKEN" > /dev/null 2>&1 && break
+    sleep 2
+  done
   BROKEN=""
 }
 trap 'restore_policy; rm -rf "$WORK"' EXIT INT TERM
+
+# Framework rule 5 says verify the restore; it does not say "verify it only
+# when the test passed". The first version of this script restored on the
+# INCONCLUSIVE path and exited without checking, which is the same
+# unverified-repair the framework warns about, committed by the tool that
+# warns about it.
+verify_restore() {
+  for _ in 1 2 3 4 5 6 7 8; do
+    aws lambda invoke --function-name "$FUNCTION_NAME" \
+      --payload '{"justification":"verify the restore"}' \
+      --cli-binary-format raw-in-base64-out "$WORK/verify.json" > /dev/null 2>&1 || true
+    if grep -q '"granted": true' "$WORK/verify.json" 2>/dev/null; then
+      note "the dependent call works again"
+      return 0
+    fi
+    sleep "$INTERVAL"
+  done
+  note "the dependent call did NOT recover — the environment is not as it was found"
+  return 1
+}
 
 step() { printf '\n== %s\n' "$*"; }
 note() { printf '   %s\n' "$*"; }
@@ -178,6 +201,8 @@ if [ "$REFUSED" -eq 0 ]; then
   note "restoring, so the environment is not left changed."
   restore_policy
   note "restored to version $ORIGINAL"
+  step "Verifying the restore"
+  verify_restore || exit 4
   echo
   echo "This is a finding, not a failure of the test: a permission can be"
   echo "removed from every policy that grants it and keep working. See"
@@ -210,24 +235,7 @@ note "default version is $ORIGINAL again"
 # Step 6 is easy to get almost right. This is the step that proves it.
 
 step "Verifying the restore"
-VERIFIED=0
-for _ in 1 2 3 4 5 6 7 8; do
-  aws lambda invoke --function-name "$FUNCTION_NAME" \
-    --payload '{"justification":"verify the restore"}' \
-    --cli-binary-format raw-in-base64-out "$WORK/verify.json" > /dev/null 2>&1 || true
-  if grep -q '"granted": true' "$WORK/verify.json" 2>/dev/null; then
-    VERIFIED=1
-    break
-  fi
-  sleep "$INTERVAL"
-done
-
-if [ "$VERIFIED" -eq 1 ]; then
-  note "the dependent call works again"
-else
-  note "the dependent call did NOT recover — the environment is not as it was found"
-  exit 4
-fi
+verify_restore
 
 echo
 if [ "$ATTRIBUTED" -eq 1 ]; then

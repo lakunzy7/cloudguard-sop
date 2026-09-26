@@ -91,7 +91,6 @@ went.
 | `sop-files/project3/phase5-automated-revocation/iam-chaos-test.sh` | 5.2 | The automated test. Records the state, removes one named policy statement, retries the dependent call until it is refused, checks the refusal names what was removed, restores, and verifies the restore — restoring on any exit, including a signal. |
 | `sop-files/project3/phase6-risk-scoring/ENTITLEMENT-RISK-SCORING.md` | 6.2 | The method and the full ranking. Four dimensions scored 1–5 and multiplied rather than added, every score traceable to something readable in the account, and a closing section showing a reader how to produce their own table from their own environment. |
 | `sop-files/project3/phase7-seeded-escalation-path/seeded-escalation.tf` | 7.1 | The seeded escalation path: a trust-maintenance role that reads role configuration and carries one write — `iam:UpdateAssumeRolePolicy` on the CI role, which holds `iam:*` on everything. Apply it, rebuild the graph, and the privesc query names it. Section 7.3 removes that one statement and nothing else. |
-| `sop-files/project3/phase8-chain-a-closing-report/CHAIN-A-CLOSING-REPORT.md` | 8.1 | Chain A's closing report and handoff to Chain B. What each of the three projects changed, the identity and access baseline Chain B inherits — the principals, the four reachability edges, the ranking — and a final section naming what is still standing rather than presenting a finished account. |
 
 ### ⚠️ What is deliberately *not* staged here, and why
 

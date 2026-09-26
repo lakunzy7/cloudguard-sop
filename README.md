@@ -37,6 +37,7 @@ typed by hand.
 | `sop-files/project1/phase3-rightsizing/iam.tf` | 3.2 | The right-sized policy replacing `AmazonS3FullAccess`. Two statements: `s3:GetObject` on the bucket, `s3:PutObject` on `metadata/*`. |
 | `sop-files/project1/phase4-oidc/providers.tf` | 4.1.2 | The same provider configuration with an S3 remote backend added, so a GitHub Actions runner can read the state a CI deploy needs. |
 | `sop-files/project1/phase4-oidc/oidc.tf` | 4.2 | The GitHub OIDC provider, the deploy role, and the trust policy that stops every other repository on GitHub assuming it. |
+| `sop-files/project1/phase4-oidc/terraform-deploy.yml` | 4.3 | The deploy workflow. Kept separate from `terraform-ci.yml` rather than added to it: the CI pipeline validates code and needs no AWS access at all, while this one deploys and does — so the credential-bearing workflow has exactly one job. |
 | `sop-files/project1/phase5-drift/check-policy-drift.sh` | 5.3 | The drift check itself. Resolves the live policy, reads real CloudTrail usage for a lookback window, and compares the two in both directions. |
 | `sop-files/project1/phase5-drift/policy-drift-check.yml` | 5.3 | The schedule. `cron: '17 6 * * 1'` — Mondays at 06:17 UTC — running the script through the same OIDC role Phase 4 created. |
 

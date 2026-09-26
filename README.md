@@ -85,7 +85,8 @@ went.
 
 | File | Walkthrough section | What it is |
 |---|---|---|
-| `sop-files/project3/phase3-chaos-framework/IAM-CHAOS-FRAMEWORK.md` | 3.2 | The chaos framework: five rules, seven steps, the three ways a test lies to you, and the method applied to the tests Projects 1 to 3 actually ran. |
+| `sop-files/project3/phase3-chaos-framework/IAM-CHAOS-FRAMEWORK.md` | 3.2 | The chaos framework: five rules, seven steps, the four ways a test lies to you, and the method applied to the tests Projects 1 to 3 actually ran. |
+| `sop-files/project3/phase5-automated-revocation/iam-chaos-test.sh` | 5.2 | The automated test. Records the state, removes one named policy statement, retries the dependent call until it is refused, checks the refusal names what was removed, restores, and verifies the restore — restoring on any exit, including a signal. |
 
 ### ⚠️ What is deliberately *not* staged here, and why
 

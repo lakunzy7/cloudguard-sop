@@ -257,15 +257,20 @@ aws iam list-roles --query 'Roles[].RoleName' --output text
 
 ↳ Entries beginning `aws-service-role/` or `AWSServiceRole` are AWS's own
 service-linked roles, created by the services that use them. They are not yours
-to score, and the account's copy of Project 2's standard says so.
+to score, and the account's copy of Project 2's standard says so. `AWSReservedSSO_Billing_…`
+is a different case — it belongs to an Identity Center permission set, it is in
+this ranking, and a reader should know that nobody in this account can change it.
 
-**COMMAND — then, for each role that is yours:**
+**COMMAND — read one role's inputs:**
 ```bash
-aws iam list-attached-role-policies --role-name <role>
-aws iam list-role-policies --role-name <role>
-aws iam get-role --role-name <role> \
+R=cloudguard-jit-broker-role
+aws iam list-attached-role-policies --role-name $R
+aws iam list-role-policies --role-name $R
+aws iam get-role --role-name $R \
   --query 'Role.[AssumeRolePolicyDocument,RoleLastUsed]'
 ```
+
+↳ **`R` is a shell variable holding a real role name, so this block runs as written.** Change the one name and the three commands follow; run it again for each role you are scoring. Nothing here is a placeholder waiting to be filled in — a walkthrough that prints `<role>` and says nothing about it produces a shell error, not a result.
 
 ↳ The first two give blast radius and escalation: what it can do, and whether
 any of that can reach further. The third gives persistence and reachability, and

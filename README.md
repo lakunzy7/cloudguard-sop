@@ -81,6 +81,20 @@ retyping it. A deletion has nothing to print, which is why Phase 4's two
 files are staged with no inline equivalent beyond the description of what
 went.
 
+## Project 3 — CIEM and IAM Chaos Engineering
+
+| File | Walkthrough section | What it is |
+|---|---|---|
+| `sop-files/project3/phase3-chaos-framework/IAM-CHAOS-FRAMEWORK.md` | 3.2 | The chaos framework: five rules, seven steps, the three ways a test lies to you, and the method applied to the tests Projects 1 to 3 actually ran. |
+
+### ⚠️ What is deliberately *not* staged here, and why
+
+**Phase 4 stages nothing, on purpose.** That phase runs a chaos test: it removes one permission, watches what breaks, and puts it back. The broken state is the *experiment*, not a deliverable — staging it would hand you a file whose only purpose is to break the environment, and copying it would do exactly that.
+
+**The restore point is the repository.** `terraform/jit.tf` is under version control, so `git checkout terraform/jit.tf` returns it exactly as it was. That is stronger than a staged copy, because it cannot drift: the commit is the record. The walkthrough's Step 1 says so before anything is changed, which is the framework's own first rule — record the state before you disturb it.
+
+The same applies to any future phase whose work is a reversible experiment rather than a file to keep. If you are looking here for something to copy and cannot find it, check whether the walkthrough is asking you to *do* something instead.
+
 ## ⚠️ What you must change before these will work for you
 
 **A handful of values in these files are specific to the author's account

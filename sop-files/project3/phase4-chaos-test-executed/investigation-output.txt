@@ -1,0 +1,127 @@
+# Phase 4 — the investigation, as terminal output
+
+These are command outputs, not screenshots. They were produced by the
+assistant on the EC2 box during the Phase 4 investigation, on 2026-09-26
+between 05:34 and 06:06 UTC, and are recorded verbatim.
+
+**The duration itself is in two screenshots, not here.** The policy's
+version history — IAM → Policies → `cloudguard-jit-broker` → Policy
+versions — shows the break and the restore thirty-one minutes apart, and
+the CloudTrail Event history filtered to `CreatePolicyVersion` shows the
+same timeline from the record. Those two frames carry the finding; this
+file carries the individual calls inside it, and the checks that ruled out
+the other explanations.
+
+What the screenshots in this folder cover: the break (063327), the restore
+(070508), the policy versions and the CloudTrail timeline (072044, 072212).
+
+One frame needs labelling: 070554/070639 shows the probe function being
+created and returning `assumed: true` — but it ran seconds *after* the
+restore, so its success is the ordinary result and it proves nothing about
+the finding. It is noted here so that it is not mistaken for the
+discriminator, which was the assistant's run at 05:59 with the policy still
+broken.
+
+---
+
+## The policy, after the break was applied
+
+```
+$ aws iam get-policy-version --policy-arn .../cloudguard-jit-broker \
+    --version-id v1 --query PolicyVersion.Document.Statement[].Sid
+PublishTheRequestedCredential
+```
+
+The `AssumeTheJitRoleOnly` statement is gone. The policy is still attached
+to `cloudguard-jit-broker-role`, and the role has no other policy that
+grants `sts:AssumeRole`:
+
+```
+$ aws iam list-attached-role-policies --role-name cloudguard-jit-broker-role
+cloudguard-jit-broker	AWSLambdaBasicExecutionRole
+$ aws iam list-role-policies --role-name cloudguard-jit-broker-role
+(none)
+```
+
+## What the simulator said
+
+```
+$ aws iam simulate-principal-policy \
+    --policy-source-arn arn:aws:iam::113410693155:role/cloudguard-jit-broker-role \
+    --action-names sts:AssumeRole \
+    --resource-arns arn:aws:iam::113410693155:role/cloudguard-jit-developer-access
+sts:AssumeRole	implicitDeny
+```
+
+The simulator reflects the change immediately.
+
+## What the account actually did
+
+The broker was invoked repeatedly after the break. Every invocation issued
+a credential:
+
+```
+05:34:32  {"granted": true, "session_name": "jit-20260926-053432", ...}
+05:40:23  {"granted": true, "session_name": "jit-20260926-054023", ...}
+05:53:47  {"granted": true, "session_name": "jit-20260926-055347", ...}   <- after a forced cold start
+06:00:25  {"granted": true, "session_name": "jit-20260926-060025", ...}
+```
+
+The break was applied at approximately 05:33. The last of these is 27
+minutes later.
+
+## The discriminator
+
+Two explanations remained: a cached credential session inside the broker's
+Lambda, or IAM's own enforcement lagging. A second function was created
+running as the *same* broker role — a new function, therefore a new
+credential session, with none of the broker's history — and it attempted
+the same assumption:
+
+```
+$ aws lambda create-function --function-name cg-session-probe \
+    --role arn:aws:iam::113410693155:role/cloudguard-jit-broker-role ...
+cg-session-probe	Pending
+
+$ aws lambda get-function-configuration --function-name cg-session-probe \
+    --query '[State,LastUpdateStatus]'
+Active	Successful
+
+$ aws lambda invoke --function-name cg-session-probe \
+    --payload '{"role_arn":"arn:aws:iam::113410693155:role/cloudguard-jit-developer-access"}' ...
+$ cat /tmp/probe-out.json
+{"assumed": true, "expires": "2026-09-26T06:15:20+00:00"}
+```
+
+A brand-new session, the same role, and the assumption succeeded. That
+rules out the cached session and leaves the enforcement path.
+
+The probe was deleted immediately afterwards; `list-functions` returned the
+two original functions.
+
+## What CloudTrail recorded
+
+Every successful assumption of the JIT role in this window was made by the
+broker role:
+
+```
+05:33:55  AssumeRole  assumed-role/cloudguard-jit-broker-role/cloudguard-jit-broker
+05:34:33  AssumeRole  assumed-role/cloudguard-jit-broker-role/cloudguard-jit-broker
+05:40:25  AssumeRole  assumed-role/cloudguard-jit-broker-role/cloudguard-jit-broker
+05:53:49  AssumeRole  assumed-role/cloudguard-jit-broker-role/cloudguard-jit-broker
+```
+
+---
+
+## What this supports, and what it does not
+
+**Supported:** for at least 27 minutes after `sts:AssumeRole` was removed
+from every policy attached to the broker role, the role could still call
+it — verified from a fresh credential session, and recorded by CloudTrail.
+
+**Not claimed:** that IAM never enforced the removal. The experiment ended
+when the policy was restored; no attempt was made to find the point at
+which it would have taken effect. The measured window is a lower bound.
+
+**Not explained:** why. The simulator and the enforcement path disagreed
+for the whole window, and nothing in the environment accounts for it.

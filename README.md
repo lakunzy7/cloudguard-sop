@@ -87,6 +87,7 @@ went.
 | File | Walkthrough section | What it is |
 |---|---|---|
 | `sop-files/project3/phase3-chaos-framework/IAM-CHAOS-FRAMEWORK.md` | 3.2 | The chaos framework: five rules, seven steps, the four ways a test lies to you, and the method applied to the tests Projects 1 to 3 actually ran. |
+| `sop-files/project3/phase4-chaos-test-executed/investigation-output.txt` | 4.10 | The investigation as terminal output: the four grants issued after the permission was removed, what the simulator said, the probe that was meant to discriminate and did not, and CloudTrail's record of who made each call. It closes by separating what the window **supports** from what it does **not claim** and what it does **not explain**. |
 | `sop-files/project3/phase5-automated-revocation/iam-chaos-test.sh` | 5.2 | The automated test. Records the state, removes one named policy statement, retries the dependent call until it is refused, checks the refusal names what was removed, restores, and verifies the restore — restoring on any exit, including a signal. |
 | `sop-files/project3/phase6-risk-scoring/ENTITLEMENT-RISK-SCORING.md` | 6.2 | The method and the full ranking. Four dimensions scored 1–5 and multiplied rather than added, every score traceable to something readable in the account, and a closing section showing a reader how to produce their own table from their own environment. |
 | `sop-files/project3/phase7-seeded-escalation-path/seeded-escalation.tf` | 7.1 | The seeded escalation path: a trust-maintenance role that reads role configuration and carries one write — `iam:UpdateAssumeRolePolicy` on the CI role, which holds `iam:*` on everything. Apply it, rebuild the graph, and the privesc query names it. Section 7.3 removes that one statement and nothing else. |
@@ -94,7 +95,7 @@ went.
 
 ### ⚠️ What is deliberately *not* staged here, and why
 
-**Phase 4 stages nothing, on purpose.** That phase runs a chaos test: it removes one permission, watches what breaks, and puts it back. The broken state is the *experiment*, not a deliverable — staging it would hand you a file whose only purpose is to break the environment, and copying it would do exactly that.
+**Phase 4 stages the record, never the experiment.** That phase runs a chaos test: it removes one permission, watches what breaks, and puts it back. The *broken state* is the experiment, not a deliverable — staging it would hand you a file whose only purpose is to break the environment, and copying it would do exactly that. What is staged is the other half: `investigation-output.txt`, the command outputs the finding rests on, which no command can regenerate because the window it measured has closed.
 
 **The restore point is the repository.** `terraform/jit.tf` is under version control, so `git checkout terraform/jit.tf` returns it exactly as it was. That is stronger than a staged copy, because it cannot drift: the commit is the record. The walkthrough's Step 1 says so before anything is changed, which is the framework's own first rule — record the state before you disturb it.
 
